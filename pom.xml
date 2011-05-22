@@ -3,6 +3,26 @@
   <groupId>mc.now</groupId>
   <artifactId>mc.now</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  <build>
+  	<plugins>
+  		<plugin>
+  			<groupId>org.apache.maven.plugins</groupId>
+  			<artifactId>maven-assembly-plugin</artifactId>
+  			<version>2.2</version>
+  			<configuration>
+                <archive>
+                    <manifest>
+                        <mainClass>mc.now.ui.Installer</mainClass>
+                    </manifest>
+                </archive>
+                <descriptorRefs>
+                    <descriptorRef>jar-with-dependencies</descriptorRef>
+                </descriptorRefs>
+            </configuration>
+  			
+  		</plugin>
+  	</plugins>
+  </build>
   <dependencies>
   	<dependency>
   		<groupId>org.apache.commons</groupId>
