@@ -173,7 +173,7 @@ public class InstallScript {
       return;
     }
 
-    text.append("Repacking minecraft.jar\n");
+    text.append("Deleting temporary files\n");
     
     try {
       FileUtils.deleteDirectory( tmp );
