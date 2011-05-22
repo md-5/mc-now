@@ -22,7 +22,7 @@ import org.apache.commons.io.FileUtils;
 
 public class InstallScript {
   
-  public static String[] coreModOrder = {"GuiAPI","ModOptionsAPI","GuiAPI-Patch","ModLoader","AudioMod","AutoID","Dungeon API"};
+  public static final String[] coreModOrder = {"GuiAPI","ModOptionsAPI","GuiAPI-Patch","ModLoader","AudioMod","AutoID","Dungeon API"};
   
   public static void backupMCJar( String mcjar ) throws NoSuchAlgorithmException, IOException {
     FileUtils.copyFile( new File(mcjar), new File(mcjar+"_BACKUP") );
@@ -135,11 +135,8 @@ public class InstallScript {
     File reqDir = new File("./mods/required/");
     
     //TODO specific ordering required!
-    for (File mod : reqDir.listFiles()) {
-      if (!mod.isDirectory()) {
-        continue;
-      }
-      String name = mod.getName();
+    for (String name : coreModOrder) {
+      File mod = new File("./mods/required/"+name+"/");
       text.append("...Installing " + name+"\n");
       try {
         installMod( mod, tmp, mcDir );
@@ -148,7 +145,6 @@ public class InstallScript {
         e.printStackTrace();
         return;
       }
-      
     }
     
     if (!mods.isEmpty()) {
@@ -186,6 +182,7 @@ public class InstallScript {
       e.printStackTrace();
       return;
     }
+    text.append( "Finished!" );
     
   }
   
