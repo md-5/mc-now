@@ -31,4 +31,8 @@ public class PlatformUtil {
       default: return null;
     }
   }
+
+  public static String getMinecraftJar() {
+    return getMinecraftFolder() + "bin/minecraft.jar";
+  }
 }
