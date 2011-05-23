@@ -3,13 +3,10 @@ package mc.now.ui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -18,19 +15,18 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
-import javax.swing.UIManager;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
-
-import com.jidesoft.swing.CheckBoxTree;
-import com.jidesoft.swing.CheckBoxTreeSelectionModel;
 
 import mc.now.util.InstallScript;
 import net.miginfocom.layout.CC;
 import net.miginfocom.swing.MigLayout;
 
+import com.jidesoft.swing.CheckBoxTree;
+import com.jidesoft.swing.CheckBoxTreeSelectionModel;
+
 @SuppressWarnings( "serial" )
-public class Installer extends JFrame implements ActionListener {
+public abstract class Installer extends JFrame implements ActionListener {
 
   private JButton nextButton;
   private JButton cancelButton;
@@ -40,15 +36,15 @@ public class Installer extends JFrame implements ActionListener {
   private JPanel contentPane;
   private CheckBoxTree modTree;
 
-  public Installer() throws IOException {
-    super("Minecraft NOW Modpack Installer");
+  public Installer() {
+    super("Modpack Installer");
     setResizable( false );
     setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
     setSize( 500, 500 );
     init();
   }
   
-  private void init() throws IOException {
+  private void init() {
     JPanel p = new JPanel();
     p.setLayout( new MigLayout( "fill", "[fill,grow|]", "[fill,grow||]") ); //lc col row
     p.add(getMainPane(), new CC().spanX().grow());
@@ -84,37 +80,12 @@ public class Installer extends JFrame implements ActionListener {
   private JPanel getMainPane() {
     if (contentPane == null) {
       contentPane = new JPanel();
-      JLabel text = new JLabel();
-      try {
-        ImageIcon icon = new ImageIcon( ImageIO.read(ClassLoader.getSystemResourceAsStream( "NOW_Logo.png" )) );
-        text.setIcon( icon );
-      } catch ( IOException e ) {
-        e.printStackTrace();
-      }
-      text.setText( "<html><center><h3>Minecraft NOW! Modpack v5 Installer</h3><br>" +
-          "This will install the the NOW! modpack v5 for Minecraft 1.5_01<br>" +
-          "We are not responsible when you lose all your giant obsidian dongs.<br>" +
-          "This will only work with a fresh minecraft.jar and mod folder." +
-          "</center></html>" );
-      text.setVerticalTextPosition(JLabel.BOTTOM);
-      text.setHorizontalTextPosition(JLabel.CENTER);
-      contentPane.add( text );
+      initialPanel( contentPane );
     }
     return contentPane;
   }
   
-  public static void main( String[] args ) throws IOException {
-    
-    try {
-      UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    
-    Installer installer = new Installer();
-    
-    installer.setVisible( true );
-  }
+  protected abstract void initialPanel(JPanel contentPane);
 
   @Override
   public void actionPerformed( ActionEvent e ) {
@@ -128,15 +99,14 @@ public class Installer extends JFrame implements ActionListener {
 
   private void advanceStep() {
     step++;
-    
     switch(step) {
-      case 1: buildStepOnePane(); return;
-      case 2: buildStepTwoPane(); return;
+      case 1: buildOptionsPane(); return;
+      case 2: buildInstallingPane(); return;
       default: System.err.println("bad step"); return;
     }
   }
 
-  private void buildStepTwoPane() {
+  private void buildInstallingPane() {
     
     getNextButton().setEnabled( false );
     getCancelButton().setEnabled( false );
@@ -204,7 +174,8 @@ public class Installer extends JFrame implements ActionListener {
         if (!mod.isDirectory()) {
           continue;
         }
-        root.add( new DefaultMutableTreeNode( mod.getName() ) );
+        DefaultMutableTreeNode child = new DefaultMutableTreeNode( mod.getName() );
+        root.add(child);
       }
       modTree = new CheckBoxTree(root);
       modTree.setRootVisible( false );
@@ -212,7 +183,7 @@ public class Installer extends JFrame implements ActionListener {
     return modTree;
   }
   
-  private void buildStepOnePane() {
+  private void buildOptionsPane() {
     JPanel p = getMainPane();
     p.removeAll();
     p.setLayout( new BoxLayout( p, BoxLayout.Y_AXIS ) );

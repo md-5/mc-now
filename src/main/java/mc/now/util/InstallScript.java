@@ -22,8 +22,6 @@ import org.apache.commons.io.FileUtils;
 
 public class InstallScript {
   
-  public static final String[] coreModOrder = {"GuiAPI","ModOptionsAPI","GuiAPI-Patch","ModLoader","AudioMod","AutoID","Dungeon API"};
-  
   public static void backupMCJar( String mcjar ) throws NoSuchAlgorithmException, IOException {
     FileUtils.copyFile( new File(mcjar), new File(mcjar+"_BACKUP") );
   }
@@ -135,8 +133,11 @@ public class InstallScript {
     File reqDir = new File("./mods/required/");
     
     //TODO specific ordering required!
-    for (String name : coreModOrder) {
-      File mod = new File("./mods/required/"+name+"/");
+    for (File mod : reqDir.listFiles()) {
+      if (!mod.isDirectory()) {
+        continue;
+      }
+      String name = mod.getName();
       text.append("...Installing " + name+"\n");
       try {
         installMod( mod, tmp, mcDir );
