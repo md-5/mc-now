@@ -12,7 +12,7 @@
   			<configuration>
                 <archive>
                     <manifest>
-                        <mainClass>mc.now.ui.NowInstaller</mainClass>
+                        <mainClass>mc.now.ui.Installer</mainClass>
                     </manifest>
                 </archive>
                 <descriptorRefs>
