@@ -1,8 +1,5 @@
 package mc.now.util;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-
 import org.apache.commons.io.FilenameUtils;
 
 public class PlatformUtil {
@@ -40,10 +37,7 @@ public class PlatformUtil {
   }
   
   public static String getMinecraftModsFolder() {
-    return FilenameUtils.normalize( FilenameUtils.concat(getMinecraftFolder(),"mods/")) ;
+    return FilenameUtils.normalize( FilenameUtils.concat(getMinecraftFolder(),"mods")) ;
   }
   
-  public static void main( String[] args ) throws NoSuchAlgorithmException, IOException {
-    System.out.println(getMinecraftModsFolder());
-  }
 }

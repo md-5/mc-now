@@ -238,17 +238,33 @@ public class InstallScript {
     text.append( "Finished!" );
     
   }
+  
+  //TODO move this elsewhere and make it more general
+  private static final String[] otherThingsToBackup = {"millenaire"};
 
   private static void createBackup() throws IOException {
     //TODO what other folders to backup?
     FileUtils.copyFile( new File(PlatformUtil.getMinecraftJar()), new File(PlatformUtil.getMinecraftJar()+".backup") );
     File mods = new File(PlatformUtil.getMinecraftModsFolder());
-    File modsBackup = new File(PlatformUtil.getMinecraftModsFolder() + "_backup");
+    File modsBackup = new File(PlatformUtil.getMinecraftModsFolder() + "_backup/");
     if (modsBackup.exists()) {
       FileUtils.deleteDirectory( modsBackup );
     }
     if (mods.exists()) {
       FileUtils.copyDirectory(mods,modsBackup);
+    }
+    
+    for (String name : otherThingsToBackup) {
+      String fname = FilenameUtils.normalize( FilenameUtils.concat( PlatformUtil.getMinecraftFolder(), name ) );
+      String fnameBackup = fname + "_backup";
+      File f = new File(fname);
+      File backup = new File( fnameBackup );
+      if (backup.exists()) {
+        FileUtils.deleteDirectory( backup );
+      }
+      if (f.exists()) {
+        FileUtils.copyDirectory( f, backup );
+      }
     }
   }
   
@@ -260,6 +276,15 @@ public class InstallScript {
     if (modsBackup.exists()) {
       FileUtils.deleteDirectory( mods );
       FileUtils.copyDirectory(modsBackup,mods);
+    }
+    for (String name : otherThingsToBackup) {
+      String fname = FilenameUtils.normalize( FilenameUtils.concat( PlatformUtil.getMinecraftFolder(), name ) );
+      String fnameBackup = fname + "_backup";
+      File f = new File(fname);
+      File backup = new File( fnameBackup );
+      if (backup.exists()) {
+        FileUtils.copyDirectory( backup, f );
+      }
     }
   }
 
