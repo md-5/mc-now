@@ -11,9 +11,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
+import org.apache.log4j.Logger;
+
 @SuppressWarnings( "serial" )
 public class NowInstaller extends Installer {
 
+  private static final Logger LOGGER = Logger.getLogger( NowInstaller.class );
   @Override
   protected void initialPanel(JPanel contentPane) {
     JLabel text = new JLabel();
@@ -22,7 +25,7 @@ public class NowInstaller extends Installer {
       
       text.setIcon( icon );
     } catch ( IOException e ) {
-      e.printStackTrace();
+      LOGGER.error( "IO error on logo.png", e );
     }
     StringBuffer textBuffer = new StringBuffer();
     try {
@@ -32,8 +35,7 @@ public class NowInstaller extends Installer {
         textBuffer.append( line + "\n" );
       } 
     } catch (IOException ioe) {
-      ioe.printStackTrace();
-      
+      LOGGER.error( "IO error on logo.png", ioe );
     }
     text.setText(textBuffer.toString());
     text.setVerticalTextPosition(JLabel.BOTTOM);
@@ -42,11 +44,11 @@ public class NowInstaller extends Installer {
   }
   
   public static void main( String[] args ) throws IOException {
-    
+    LOGGER.debug( "debugging here" );
     try {
       UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER.warn( "Couldn't set the look and feel", e );
     }
     
     NowInstaller installer = new NowInstaller();

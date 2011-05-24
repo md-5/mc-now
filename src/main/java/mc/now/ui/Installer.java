@@ -10,6 +10,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -17,6 +18,8 @@ import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
+
+import org.apache.log4j.Logger;
 
 import mc.now.util.InstallScript;
 import net.miginfocom.layout.CC;
@@ -28,6 +31,7 @@ import com.jidesoft.swing.CheckBoxTreeSelectionModel;
 @SuppressWarnings( "serial" )
 public abstract class Installer extends JFrame implements ActionListener {
 
+  private static final Logger LOGGER = Logger.getLogger( Installer.class );
   private JButton nextButton;
   private JButton cancelButton;
   private JProgressBar progressBar;
@@ -38,10 +42,10 @@ public abstract class Installer extends JFrame implements ActionListener {
 
   public Installer() {
     super("Modpack Installer");
-    setResizable( false );
     setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
     setSize( 500, 500 );
     init();
+    pack();
   }
   
   private void init() {
@@ -120,21 +124,28 @@ public abstract class Installer extends JFrame implements ActionListener {
 
       @Override
       protected Object doInBackground() throws Exception {
-        List<String> mods = new ArrayList<String>();
-        CheckBoxTreeSelectionModel select = getModTree().getCheckBoxTreeSelectionModel();
-        for (TreePath path : select.getSelectionPaths()) {
-          DefaultMutableTreeNode node = ((DefaultMutableTreeNode)path.getLastPathComponent());
-          String mod = (String)node.getUserObject();
-          if (mod == null) {
-            for (int i = 0; i < node.getChildCount(); i++) {
-              DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt( i );
-              mods.add( (String) child.getUserObject());
+        try {
+          List<String> mods = new ArrayList<String>();
+          CheckBoxTreeSelectionModel select = getModTree().getCheckBoxTreeSelectionModel();
+          for (TreePath path : select.getSelectionPaths()) {
+            DefaultMutableTreeNode node = ((DefaultMutableTreeNode)path.getLastPathComponent());
+            String mod = (String)node.getUserObject();
+            if (mod == null) {
+              for (int i = 0; i < node.getChildCount(); i++) {
+                DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt( i );
+                mods.add( (String) child.getUserObject());
+              }
+            } else {
+              mods.add(mod);
             }
-          } else {
-            mods.add(mod);
           }
+          InstallScript.guiInstall(mods,text);
+        } catch (Exception e) {
+          LOGGER.error("Error while trying to install mods",e);
+          JOptionPane.showMessageDialog( Installer.this, "Unexpected error while installing mods:\n"+e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE );
+          setVisible( false );
+          dispose();
         }
-        InstallScript.guiInstall(mods,text);
         return null;
       }
       
@@ -169,16 +180,24 @@ public abstract class Installer extends JFrame implements ActionListener {
   private CheckBoxTree getModTree() {
     if (modTree == null) {
       DefaultMutableTreeNode root = new DefaultMutableTreeNode();
-      File opt = new File("./mods/extra/");//TODO
-      for (File mod : opt.listFiles()) {
-        if (!mod.isDirectory()) {
-          continue;
+      try {
+        File opt = new File("./mods/extra/");
+        for (File mod : opt.listFiles()) {
+          if (!mod.isDirectory()) {
+            continue;
+          }
+          DefaultMutableTreeNode child = new DefaultMutableTreeNode( mod.getName() );
+          root.add(child);
         }
-        DefaultMutableTreeNode child = new DefaultMutableTreeNode( mod.getName() );
-        root.add(child);
+        modTree = new CheckBoxTree(root);
+        modTree.setRootVisible( false );
+      } catch (Exception e) {
+        LOGGER.error( "Error scanning and building optional mod tree.",e );
+        JOptionPane.showMessageDialog( this, "Error scanning mods folder. It may not exists.", "Error", JOptionPane.ERROR_MESSAGE );
+        setVisible( false );
+        dispose();
+        return null;
       }
-      modTree = new CheckBoxTree(root);
-      modTree.setRootVisible( false );
     }
     return modTree;
   }

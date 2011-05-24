@@ -5,3 +5,4 @@ src/main/java/mc/now/ui/NowInstaller.java -text
 src/main/java/mc/now/util/CollisionCheck.java -text
 src/main/java/mc/now/util/InstallScript.java -text
 src/main/java/mc/now/util/PlatformUtil.java -text
+src/main/resources/log4j.xml -text

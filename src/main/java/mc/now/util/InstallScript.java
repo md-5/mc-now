@@ -19,9 +19,11 @@ import javax.swing.JTextArea;
 
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 
 public class InstallScript {
   
+  private static final Logger LOGGER = Logger.getLogger( InstallScript.class );
   public static void backupMCJar( String mcjar ) throws NoSuchAlgorithmException, IOException {
     FileUtils.copyFile( new File(mcjar), new File(mcjar+"_BACKUP") );
   }
@@ -126,7 +128,7 @@ public class InstallScript {
       unpackMCJar( tmpdir, mcjar);
     } catch ( IOException e ) {
       text.append("Error unpacking minecraft.jar!");
-      e.printStackTrace();
+      LOGGER.error("Install Error",e);
       return;
     }
     
@@ -143,7 +145,7 @@ public class InstallScript {
         installMod( mod, tmp, mcDir );
       } catch ( IOException e ) {
         text.append("Error installing "+name+"!\n");
-        e.printStackTrace();
+        LOGGER.error("Install Error",e);
         return;
       }
     }
@@ -159,7 +161,7 @@ public class InstallScript {
         installMod( mod, tmp, mcDir );
       } catch ( IOException e ) {
         text.append("Error installing "+name+"!\n");
-        e.printStackTrace();
+        LOGGER.error("Install Error",e);
         return;
       }
     }
@@ -170,7 +172,7 @@ public class InstallScript {
       repackMCJar(tmpdir,mcjar);
     } catch ( IOException e ) {
       text.append("Error repacking minecraft.jar!");
-      e.printStackTrace();
+      LOGGER.error("Install Error",e);
       return;
     }
 
@@ -180,7 +182,7 @@ public class InstallScript {
       FileUtils.deleteDirectory( tmp );
     } catch ( IOException e ) {
       text.append("Error deleting temporary files!\n");
-      e.printStackTrace();
+      LOGGER.error("Install Error",e);
       return;
     }
     text.append( "Finished!" );
