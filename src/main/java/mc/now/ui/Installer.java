@@ -127,16 +127,19 @@ public abstract class Installer extends JFrame implements ActionListener {
         try {
           List<String> mods = new ArrayList<String>();
           CheckBoxTreeSelectionModel select = getModTree().getCheckBoxTreeSelectionModel();
-          for (TreePath path : select.getSelectionPaths()) {
-            DefaultMutableTreeNode node = ((DefaultMutableTreeNode)path.getLastPathComponent());
-            String mod = (String)node.getUserObject();
-            if (mod == null) {
-              for (int i = 0; i < node.getChildCount(); i++) {
-                DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt( i );
-                mods.add( (String) child.getUserObject());
+          TreePath[] paths = select.getSelectionPaths();
+          if (paths != null && paths.length > 0) {
+            for (TreePath path : paths) {
+              DefaultMutableTreeNode node = ((DefaultMutableTreeNode)path.getLastPathComponent());
+              String mod = (String)node.getUserObject();
+              if (mod == null) {
+                for (int i = 0; i < node.getChildCount(); i++) {
+                  DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt( i );
+                  mods.add( (String) child.getUserObject());
+                }
+              } else {
+                mods.add(mod);
               }
-            } else {
-              mods.add(mod);
             }
           }
           InstallScript.guiInstall(mods,text);
