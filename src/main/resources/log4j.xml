@@ -4,7 +4,7 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="true">
 
   <appender name="rolling" class="org.apache.log4j.RollingFileAppender">
-    <param name="file" value="./logs/installer.log" />
+    <param name="file" value="installer.log" />
     <param name="append" value="true" />
 
     <param name="MaxFileSize" value="2MB" />

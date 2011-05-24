@@ -1,12 +1,16 @@
 package mc.now.util;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+
+import org.apache.commons.io.FilenameUtils;
+
 public class PlatformUtil {
 
   public static enum OS {
-    Mac,Linux,Windows,DEV;
+    Mac,Linux,Windows;
   }
   
-  //TODO
   public static OS currentOS;
   
   static {
@@ -27,12 +31,19 @@ public class PlatformUtil {
       case Mac: return System.getProperty( "user.home" )+"/Library/Application Support/minecraft/";
       case Linux: return System.getProperty( "user.home" )+"/.minecraft/";
       case Windows: return System.getenv("APPDATA") + "\\.minecraft\\";
-      case DEV: return "./minecraft/";
       default: return null;
     }
   }
 
   public static String getMinecraftJar() {
-    return getMinecraftFolder() + "bin/minecraft.jar";
+    return FilenameUtils.normalize( FilenameUtils.concat(getMinecraftFolder(),"bin/minecraft.jar")) ;
+  }
+  
+  public static String getMinecraftModsFolder() {
+    return FilenameUtils.normalize( FilenameUtils.concat(getMinecraftFolder(),"mods/")) ;
+  }
+  
+  public static void main( String[] args ) throws NoSuchAlgorithmException, IOException {
+    System.out.println(getMinecraftModsFolder());
   }
 }

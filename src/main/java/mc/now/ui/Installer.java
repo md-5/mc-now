@@ -1,12 +1,19 @@
 package mc.now.ui;
 
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -16,12 +23,14 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import org.apache.log4j.Logger;
 
 import mc.now.util.InstallScript;
+import mc.now.util.InstallerProperties;
 import net.miginfocom.layout.CC;
 import net.miginfocom.swing.MigLayout;
 
@@ -29,8 +38,8 @@ import com.jidesoft.swing.CheckBoxTree;
 import com.jidesoft.swing.CheckBoxTreeSelectionModel;
 
 @SuppressWarnings( "serial" )
-public abstract class Installer extends JFrame implements ActionListener {
-
+public class Installer extends JFrame implements ActionListener {
+  
   private static final Logger LOGGER = Logger.getLogger( Installer.class );
   private JButton nextButton;
   private JButton cancelButton;
@@ -41,9 +50,9 @@ public abstract class Installer extends JFrame implements ActionListener {
   private CheckBoxTree modTree;
 
   public Installer() {
-    super("Modpack Installer");
+    super(InstallerProperties.getFrameTitle());
     setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
-    setSize( 500, 500 );
+    setMinimumSize(new Dimension(500,500));
     init();
     pack();
   }
@@ -89,7 +98,29 @@ public abstract class Installer extends JFrame implements ActionListener {
     return contentPane;
   }
   
-  protected abstract void initialPanel(JPanel contentPane);
+  protected void initialPanel(JPanel contentPane) {
+    JLabel text = new JLabel();
+    try {
+      ImageIcon icon = new ImageIcon( ImageIO.read(new FileInputStream(InstallerProperties.getLogoFile())) );
+      text.setIcon( icon );
+    } catch ( IOException e ) {
+      LOGGER.error( "IO error on logo.png", e );
+    }
+    StringBuffer textBuffer = new StringBuffer();
+    try {
+      BufferedReader r = new BufferedReader( new FileReader(InstallerProperties.getInitTextFile()) );
+      String line = null;
+      while ((line = r.readLine()) != null) {
+        textBuffer.append( line + "\n" );
+      } 
+    } catch (IOException ioe) {
+      LOGGER.error( "IO error on logo.png", ioe );
+    }
+    text.setText(textBuffer.toString());
+    text.setVerticalTextPosition(JLabel.BOTTOM);
+    text.setHorizontalTextPosition(JLabel.CENTER);
+    contentPane.add( text );
+  }
 
   @Override
   public void actionPerformed( ActionEvent e ) {
@@ -106,7 +137,7 @@ public abstract class Installer extends JFrame implements ActionListener {
     switch(step) {
       case 1: buildOptionsPane(); return;
       case 2: buildInstallingPane(); return;
-      default: System.err.println("bad step"); return;
+      default: LOGGER.error( "Advanced too far" ); return;
     }
   }
 
@@ -142,7 +173,7 @@ public abstract class Installer extends JFrame implements ActionListener {
               }
             }
           }
-          InstallScript.guiInstall(mods,text);
+          InstallScript.guiInstall(mods,text,getProgressBar());
         } catch (Exception e) {
           LOGGER.error("Error while trying to install mods",e);
           JOptionPane.showMessageDialog( Installer.this, "Unexpected error while installing mods:\n"+e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE );
@@ -167,13 +198,6 @@ public abstract class Installer extends JFrame implements ActionListener {
         getNextButton().setEnabled( true );
       }
       
-      @Override
-      protected void process(List<String> msgs) {
-        for (String msg : msgs) {
-          text.append( msg + "\n" );
-          text.setCaretPosition( text.getDocument().getLength() );
-        }
-      }
     };
     
     worker.execute();
@@ -184,7 +208,7 @@ public abstract class Installer extends JFrame implements ActionListener {
     if (modTree == null) {
       DefaultMutableTreeNode root = new DefaultMutableTreeNode();
       try {
-        File opt = new File("./mods/extra/");
+        File opt = new File(InstallScript.EXTRA_MODS_FOLDER);
         for (File mod : opt.listFiles()) {
           if (!mod.isDirectory()) {
             continue;
@@ -206,13 +230,37 @@ public abstract class Installer extends JFrame implements ActionListener {
   }
   
   private void buildOptionsPane() {
+    String msg = InstallScript.preInstallCheck();
+    if (msg != null) {
+      //TODO maybe a better way to check for collisions
+      // so that non-conflicting installs doesn't raise this warning
+      msg = msg + "\nThis modpack is meant to be installed on a fresh minecraft.jar and mods folder.\n" +
+      		"Do you wish to continue, and attempt to install on top of the current minecraft?";
+      int opt = JOptionPane.showConfirmDialog(this,msg,"Installation Warning",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+      if (opt == JOptionPane.NO_OPTION) {
+        setVisible( false );
+        dispose();
+      }
+    }
     JPanel p = getMainPane();
     p.removeAll();
     p.setLayout( new BoxLayout( p, BoxLayout.Y_AXIS ) );
-    
     p.add( new JLabel("Select the mods you want to install:") );
     p.add(new JScrollPane(getModTree()));
     p.validate();
     p.repaint();
+  }
+  
+  public static void main( String[] args ) throws IOException {
+    LOGGER.debug( "Starting Modpack Installer" );
+    
+    try {
+      UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
+    } catch (Exception e) {
+      LOGGER.warn( "Couldn't set the look and feel", e );
+    }
+    
+    Installer installer = new Installer();
+    installer.setVisible( true );
   }
 }
