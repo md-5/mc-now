@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 
 public class InstallScript {
   
-  public static final String MODS_FOLDER = FilenameUtils.normalize( "./mods/" );
+  public static final String MODS_FOLDER = FilenameUtils.concat( InstallerProperties.getInstallerDir(),"mods/" );
   public static final String REQUIRED_MODS_FOLDER = FilenameUtils.concat( MODS_FOLDER, "required/" );
   public static final String EXTRA_MODS_FOLDER = FilenameUtils.concat( MODS_FOLDER, "extra/" );
   

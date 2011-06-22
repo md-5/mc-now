@@ -1,0 +1,9 @@
+<html><center>
+<h3>NOW Modpack v1.5_01 Installer programmed by Erdos</h3><br>
+This pack is NOT intended for multiplayer! Use at your own discrection!<br>
+We are not responsible when you lose all your giant obsidian dongs.<br>
+Read the included NOW_Readme.txt for more information<br><br>
+Be sure to install over a fresh MINECRAFT.JAR<br>
+and empty your MODS and MILLENAIRE folders!<br><br>
+Hit NEXT to select your optional mods.<br>
+</center></html>

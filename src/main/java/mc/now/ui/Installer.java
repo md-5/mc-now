@@ -29,8 +29,11 @@ import javax.swing.tree.TreePath;
 
 import org.apache.log4j.Logger;
 
+import sun.awt.PlatformFont;
+
 import mc.now.util.InstallScript;
 import mc.now.util.InstallerProperties;
+import mc.now.util.PlatformUtil;
 import net.miginfocom.layout.CC;
 import net.miginfocom.swing.MigLayout;
 
@@ -251,8 +254,41 @@ public class Installer extends JFrame implements ActionListener {
     p.repaint();
   }
   
+  public static boolean sanityCheck() {
+    //Check for some required stuff
+    File mcFolder = new File(PlatformUtil.getMinecraftFolder());
+    String errmsg = "";
+    if (!mcFolder.exists()) {
+      errmsg += PlatformUtil.getMinecraftFolder() + " doesn't exist.\n";
+    }
+    File modsFolder = new File(InstallScript.MODS_FOLDER);
+    if (!modsFolder.exists()) {
+      errmsg += InstallScript.MODS_FOLDER + " doesn't exist.\n";
+    }
+    File logofile = new File(InstallerProperties.getInitTextFile());
+    if (!logofile.exists()) {
+      errmsg += InstallerProperties.getInitTextFile() +" doesn't exist.\n";
+    }
+    File textfile = new File(InstallerProperties.getLogoFile());
+    if (!textfile.exists()) {
+      errmsg += InstallerProperties.getLogoFile() + " doesn't exist.\n" ;
+    }
+    
+    errmsg = errmsg.trim();
+    if (!errmsg.isEmpty()) {
+      LOGGER.error( errmsg );
+      JOptionPane.showMessageDialog( null, errmsg, "Installer Error", JOptionPane.ERROR_MESSAGE );
+    }
+    return errmsg.isEmpty();
+  }
+  
   public static void main( String[] args ) throws IOException {
     LOGGER.debug( "Starting Modpack Installer" );
+    LOGGER.debug( "Current OS: " + PlatformUtil.currentOS );
+    
+    if (!sanityCheck()) {
+      return;
+    }
     
     try {
       UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
