@@ -106,7 +106,7 @@ public class InstallScript {
   private static File getTempDir() throws IOException {
     Random rand = new Random();
     String hex = Integer.toHexString( rand.nextInt(Integer.MAX_VALUE) );
-    File tmp = new File(FilenameUtils.normalize( "./"+hex+"/"));
+    File tmp = new File(FilenameUtils.concat( InstallerProperties.getInstallerDir(),hex+"/" ));
     int t = 0;
     while (tmp.exists() && t < 10) {
       hex = Integer.toHexString( rand.nextInt(Integer.MAX_VALUE) );
