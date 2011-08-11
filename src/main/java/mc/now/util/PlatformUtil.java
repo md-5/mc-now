@@ -10,6 +10,8 @@ public class PlatformUtil {
   
   public static OS currentOS;
   
+  private static String mcFolder = null;
+  
   static {
     String osname = System.getProperty( "os.name" ).toLowerCase();
     if (osname.startsWith( "mac" )) {
@@ -21,15 +23,15 @@ public class PlatformUtil {
     } else {
       throw new RuntimeException( "Unknown OS: " + osname );
     }
+    switch(currentOS) {
+      case Mac: mcFolder = System.getProperty( "user.home" )+"/Library/Application Support/minecraft/"; break;
+      case Linux: mcFolder = System.getProperty( "user.home" )+"/.minecraft/"; break;
+      case Windows: mcFolder = System.getenv("APPDATA") + "\\.minecraft\\"; break;
+    }
   }
   
   public static String getMinecraftFolder() {
-    switch(currentOS) {
-      case Mac: return System.getProperty( "user.home" )+"/Library/Application Support/minecraft/";
-      case Linux: return System.getProperty( "user.home" )+"/.minecraft/";
-      case Windows: return System.getenv("APPDATA") + "\\.minecraft\\";
-      default: return null;
-    }
+    return mcFolder;
   }
 
   public static String getMinecraftJar() {
@@ -38,6 +40,10 @@ public class PlatformUtil {
   
   public static String getMinecraftModsFolder() {
     return FilenameUtils.normalize( FilenameUtils.concat(getMinecraftFolder(),"mods")) ;
+  }
+  
+  public static void setMinecraftFolder(String target) {
+    mcFolder = target;
   }
   
 }

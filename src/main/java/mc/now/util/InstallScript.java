@@ -278,7 +278,7 @@ public class InstallScript {
       FileUtils.copyDirectory(modsBackup,mods);
     }
     for (String name : otherThingsToBackup) {
-      String fname = FilenameUtils.normalize( FilenameUtils.concat( PlatformUtil.getMinecraftFolder(), name ) );
+      String fname = FilenameUtils.normalize( FilenameUtils.concat( PlatformUtil.getMinecraftFolder(), name ));
       String fnameBackup = fname + "_backup";
       File f = new File(fname);
       File backup = new File( fnameBackup );
