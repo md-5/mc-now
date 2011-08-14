@@ -1,5 +1,6 @@
 package mc.now.ui;
 
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,8 +32,11 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -48,11 +53,13 @@ import net.miginfocom.swing.MigLayout;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 
+import sun.awt.DesktopBrowse;
+
 import com.jidesoft.swing.CheckBoxTree;
 import com.jidesoft.swing.CheckBoxTreeSelectionModel;
 
 @SuppressWarnings( "serial" )
-public class Installer extends JFrame implements ActionListener, TreeSelectionListener {
+public class Installer extends JFrame implements ActionListener, TreeSelectionListener, HyperlinkListener {
   
   private static final Logger LOGGER = Logger.getLogger( Installer.class );
   
@@ -385,7 +392,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
           if (!child.isFile()) {
             continue;
           }
-          String name = FilenameUtils.getName( child.getName() );
+          String name = FilenameUtils.getBaseName( child.getName() );
           try {
             BufferedReader r = new BufferedReader( new FileReader( child ) );
             String l = null;
@@ -454,6 +461,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
           area.setContentType( "text/html" );
           area.setText( buffer.toString() );
           area.setEditable( false );
+          area.addHyperlinkListener( this );
           p.add(new JScrollPane(area));
         } catch ( IOException e ) {
           LOGGER.error( "Error reading description file: " + descrFile.getPath(), e );
@@ -522,6 +530,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
   }
   
   public static void main( String[] args ) throws IOException {
+    
     LOGGER.debug( "Starting Modpack Installer" );
     LOGGER.debug( "Current OS: " + PlatformUtil.currentOS );
     
@@ -537,5 +546,27 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
     
     Installer installer = new Installer();
     installer.setVisible( true );
+  }
+
+  @Override
+  public void hyperlinkUpdate( final HyperlinkEvent e ) {
+    if (e.getEventType() != HyperlinkEvent.EventType.ACTIVATED) {
+      return;
+    }
+    SwingWorker<Object, Object> worker = new SwingWorker<Object, Object>(){
+
+      @Override
+      protected Object doInBackground() throws Exception {
+        try {
+          String url = e.getURL().toExternalForm();
+          Desktop.getDesktop().browse( URI.create(url) );
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        return null;
+      }
+      
+    };
+    worker.execute();
   }
 }
