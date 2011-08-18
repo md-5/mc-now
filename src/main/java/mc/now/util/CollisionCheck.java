@@ -9,7 +9,7 @@ import java.util.Queue;
 public class CollisionCheck {
 
   /**
-   * @param args
+   * This can be used to check for file collisions between optional/required mods.
    */
   public static void main( String[] args ) {
     String dirstr = "./mods/extra";

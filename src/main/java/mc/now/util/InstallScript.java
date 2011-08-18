@@ -23,14 +23,19 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 
+/**
+ * The script that does the work to install mods.
+ */
 public class InstallScript {
-  
-  public static final String MODS_FOLDER = FilenameUtils.concat( InstallerProperties.getInstallerDir(),"mods/" );
-  public static final String REQUIRED_MODS_FOLDER = FilenameUtils.concat( MODS_FOLDER, "required/" );
-  public static final String EXTRA_MODS_FOLDER = FilenameUtils.concat( MODS_FOLDER, "extra/" );
   
   private static final Logger LOGGER = Logger.getLogger( InstallScript.class );
 
+  /**
+   * Repackages all the files in the tmp directory to the new minecraft.jar
+   * @param tmp The temp directory where mods were installed.
+   * @param mcjar The location to save the new minecraft.jar.
+   * @throws IOException
+   */
   public static void repackMCJar( File tmp, File mcjar ) throws IOException {
     byte[] dat = new byte[4*1024];
     
@@ -71,6 +76,12 @@ public class InstallScript {
     
   }
 
+  /**
+   * Unpacks all the contents of the old minecraft.jar to the temp directory.
+   * @param tmpdir The temp directory to unpack to.
+   * @param mcjar The location of the old minecraft.jar
+   * @throws IOException
+   */
   public static void unpackMCJar(File tmpdir, File mcjar) throws IOException {
     byte[] dat = new byte[4*1024];
     JarFile jar = new JarFile( mcjar );
@@ -78,6 +89,7 @@ public class InstallScript {
     while (entries.hasMoreElements()) {
       JarEntry entry = entries.nextElement();
       String name = entry.getName();
+      //This gets rid of META-INF if it exists.
       if (name.startsWith( "META-INF" )) {
         continue;
       }
@@ -103,10 +115,16 @@ public class InstallScript {
     }
   }
 
+  /**
+   * Attempts to create a temporary directory in the installer folder to unpack the jar.
+   * 
+   * @return
+   * @throws IOException
+   */
   private static File getTempDir() throws IOException {
     Random rand = new Random();
     String hex = Integer.toHexString( rand.nextInt(Integer.MAX_VALUE) );
-    File tmp = new File(FilenameUtils.concat( InstallerProperties.getInstallerDir(),hex+"/" ));
+    File tmp = new File(FilenameUtils.concat( InstallerConfig.getInstallerDir(),hex+"/" ));
     int t = 0;
     while (tmp.exists() && t < 10) {
       hex = Integer.toHexString( rand.nextInt(Integer.MAX_VALUE) );
@@ -119,18 +137,22 @@ public class InstallScript {
     return tmp;
   }
   
+  /**
+   * Checks the md5 of the minecraft.jar and whether the mods folder exists in order to warn the user.
+   * @return A string containing warnings for the user, or null if there were none.
+   */
   public static String preInstallCheck() {
     //TODO check the number in .minecraft/bin/version file?
     try {
-      InputStream mcJarIn = new FileInputStream( PlatformUtil.getMinecraftJar() );
+      InputStream mcJarIn = new FileInputStream( InstallerConfig.getMinecraftJar() );
       String digest = DigestUtils.md5Hex( mcJarIn );
       mcJarIn.close();
-      boolean jarValid = InstallerProperties.getMinecraftJarMD5().equalsIgnoreCase( digest );
-      File modsDir = new File(PlatformUtil.getMinecraftModsFolder());
+      boolean jarValid = InstallerConfig.getMinecraftJarMD5().equalsIgnoreCase( digest );
+      File modsDir = new File(InstallerConfig.getMinecraftModsFolder());
       boolean noMods = !modsDir.exists() || modsDir.listFiles().length == 0;
       String msg = null;
       if (!jarValid) {
-        msg = String.format("Your minecraft.jar has been modified or is not the correct version (%s).",InstallerProperties.getMinecraftVersion());
+        msg = String.format("Your minecraft.jar has been modified or is not the correct version (%s).",InstallerConfig.getMinecraftVersion());
       }
       if (!noMods) {
         msg = (msg == null ? "" : msg+"\n") + "You already have mods installed to the minecraft mods folder.";
@@ -142,9 +164,16 @@ public class InstallScript {
     }
   }
   
-  //TODO In general this seems to be slower than it should be
+  /**
+   * Installs the specified list of mods, updating the gui as it goes.
+   * 
+   * @param mods The list of mods to install.
+   * @param text The text area to update with logging statements.
+   * @param progressBar The progress bar to update.
+   */
   public static void guiInstall( List<String> mods, JTextArea text, JProgressBar progressBar ) {
     
+    //Create backups to restore if the install fails.
     try {
       createBackup();
     } catch ( IOException e ) {
@@ -153,6 +182,7 @@ public class InstallScript {
       return;
     }
     
+    //Create a temp directory where we can unpack the jar and install mods.
     File tmp;
     try {
       tmp = getTempDir();
@@ -166,10 +196,11 @@ public class InstallScript {
       return;
     }
     
-    File mcDir = new File(PlatformUtil.getMinecraftFolder());
-    File mcJar = new File(PlatformUtil.getMinecraftJar());
-    File reqDir = new File(REQUIRED_MODS_FOLDER);
+    File mcDir = new File(InstallerConfig.getMinecraftFolder());
+    File mcJar = new File(InstallerConfig.getMinecraftJar());
+    File reqDir = new File(InstallerConfig.getRequiredModsFolder());
     
+    //Calculate the number of "tasks" for the progress bar.
     int reqMods = 0;
     for (File f : reqDir.listFiles()) {
       if (f.isDirectory()) {
@@ -179,7 +210,6 @@ public class InstallScript {
     //3 "other" steps: unpack, repack, delete temp
     int baseTasks = 3;
     int taskSize =  reqMods + mods.size() + baseTasks;
-    
     progressBar.setMinimum( 0 );
     progressBar.setMaximum( taskSize );
     int task = 1;
@@ -205,7 +235,7 @@ public class InstallScript {
         text.append("Installing Extra mods\n");
         //TODO specific ordering required!
         for (String name : mods) {
-          File mod = new File(FilenameUtils.normalize( FilenameUtils.concat( EXTRA_MODS_FOLDER, name ) ));
+          File mod = new File(FilenameUtils.normalize( FilenameUtils.concat( InstallerConfig.getExtraModsFolder(), name ) ));
           text.append("...Installing " + name+"\n");
           installMod( mod, tmp, mcDir );
           progressBar.setValue( task++ );
@@ -242,11 +272,15 @@ public class InstallScript {
   //TODO move this elsewhere and make it more general
   private static final String[] otherThingsToBackup = {"millenaire"};
 
+  /**
+   * Make backup copies of important files/folders in case the backup fails.
+   * @throws IOException
+   */
   private static void createBackup() throws IOException {
     //TODO what other folders to backup?
-    FileUtils.copyFile( new File(PlatformUtil.getMinecraftJar()), new File(PlatformUtil.getMinecraftJar()+".backup") );
-    File mods = new File(PlatformUtil.getMinecraftModsFolder());
-    File modsBackup = new File(PlatformUtil.getMinecraftModsFolder() + "_backup/");
+    FileUtils.copyFile( new File(InstallerConfig.getMinecraftJar()), new File(InstallerConfig.getMinecraftJar()+".backup") );
+    File mods = new File(InstallerConfig.getMinecraftModsFolder());
+    File modsBackup = new File(InstallerConfig.getMinecraftModsFolder() + "_backup/");
     if (modsBackup.exists()) {
       FileUtils.deleteDirectory( modsBackup );
     }
@@ -255,7 +289,7 @@ public class InstallScript {
     }
     
     for (String name : otherThingsToBackup) {
-      String fname = FilenameUtils.normalize( FilenameUtils.concat( PlatformUtil.getMinecraftFolder(), name ) );
+      String fname = FilenameUtils.normalize( FilenameUtils.concat( InstallerConfig.getMinecraftFolder(), name ) );
       String fnameBackup = fname + "_backup";
       File f = new File(fname);
       File backup = new File( fnameBackup );
@@ -268,17 +302,21 @@ public class InstallScript {
     }
   }
   
+  /**
+   * If the install fails, restore everything that we backed up.
+   * @throws IOException
+   */
   private static void restoreBackup() throws IOException {
     //TODO what other folders to restore?
-    FileUtils.copyFile( new File(PlatformUtil.getMinecraftJar()+".backup"),new File(PlatformUtil.getMinecraftJar()) );
-    File mods = new File(PlatformUtil.getMinecraftModsFolder());
-    File modsBackup = new File(PlatformUtil.getMinecraftModsFolder() + "_backup");
+    FileUtils.copyFile( new File(InstallerConfig.getMinecraftJar()+".backup"),new File(InstallerConfig.getMinecraftJar()) );
+    File mods = new File(InstallerConfig.getMinecraftModsFolder());
+    File modsBackup = new File(InstallerConfig.getMinecraftModsFolder() + "_backup");
     if (modsBackup.exists()) {
       FileUtils.deleteDirectory( mods );
       FileUtils.copyDirectory(modsBackup,mods);
     }
     for (String name : otherThingsToBackup) {
-      String fname = FilenameUtils.normalize( FilenameUtils.concat( PlatformUtil.getMinecraftFolder(), name ));
+      String fname = FilenameUtils.normalize( FilenameUtils.concat( InstallerConfig.getMinecraftFolder(), name ));
       String fnameBackup = fname + "_backup";
       File f = new File(fname);
       File backup = new File( fnameBackup );
@@ -288,6 +326,13 @@ public class InstallScript {
     }
   }
 
+  /**
+   * Installs the mod specified by folder.
+   * @param modDir The directory of the mod to install.
+   * @param jarDir The temp directory with the contents of the jar.
+   * @param mcDir The target minecraft installation folder.
+   * @throws IOException
+   */
   private static void installMod(File modDir, File jarDir, File mcDir) throws IOException {
     for (File dir : modDir.listFiles()) {
       if (!dir.isDirectory()) {

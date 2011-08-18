@@ -8,12 +8,10 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +30,6 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
@@ -43,8 +40,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
 import mc.now.util.InstallScript;
-import mc.now.util.InstallerProperties;
-import mc.now.util.PlatformUtil;
+import mc.now.util.InstallerConfig;
 import net.miginfocom.layout.AC;
 import net.miginfocom.layout.CC;
 import net.miginfocom.layout.LC;
@@ -53,11 +49,12 @@ import net.miginfocom.swing.MigLayout;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 
-import sun.awt.DesktopBrowse;
-
 import com.jidesoft.swing.CheckBoxTree;
 import com.jidesoft.swing.CheckBoxTreeSelectionModel;
 
+/**
+ * The main GUI used to install mods.
+ */
 @SuppressWarnings( "serial" )
 public class Installer extends JFrame implements ActionListener, TreeSelectionListener, HyperlinkListener {
   
@@ -85,7 +82,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
   private Map<String,DefaultMutableTreeNode> treeNodeMap;
 
   public Installer() {
-    super(InstallerProperties.getFrameTitle());
+    super(InstallerConfig.getFrameTitle());
     setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
     setMinimumSize(new Dimension(800,600));
     init();
@@ -136,14 +133,14 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
   protected void initialPanel(JPanel contentPane) {
     JLabel text = new JLabel();
     try {
-      ImageIcon icon = new ImageIcon( ImageIO.read(new FileInputStream(InstallerProperties.getLogoFile())) );
+      ImageIcon icon = new ImageIcon( ImageIO.read(new FileInputStream(InstallerConfig.getLogoFile())) );
       text.setIcon( icon );
     } catch ( IOException e ) {
       LOGGER.error( "IO error on logo.png", e );
     }
     StringBuffer textBuffer = new StringBuffer();
     try {
-      BufferedReader r = new BufferedReader( new FileReader(InstallerProperties.getInitTextFile()) );
+      BufferedReader r = new BufferedReader( new FileReader(InstallerConfig.getInitTextFile()) );
       String line = null;
       while ((line = r.readLine()) != null) {
         textBuffer.append( line + "\n" );
@@ -167,56 +164,26 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
     return targetButton;
   }
 
-  @Override
-  public void actionPerformed( ActionEvent e ) {
-    if (e.getSource() == getNextButton()) {
-      advanceStep();
-    } else if (e.getSource() == getCancelButton()) {
-      setVisible( false );
-      dispose();
-    } else if (e.getSource() == getPresetDropdown()) {
-      loadPreset( getPresetDropdown().getSelectedItem().toString() );
-    } else if (e.getSource() == getTargetButton()) {
-      setTargetMinecraftFolder();
-    }
-  }
-  
-  private void setTargetMinecraftFolder() {
+  private void chooseTargetMinecraftFolder() {
     JFileChooser chooser = new JFileChooser();
     chooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
     chooser.setMultiSelectionEnabled( false );
     int opt = chooser.showOpenDialog( getMainPane() );
     if ( opt == JFileChooser.APPROVE_OPTION ) {
       File dir = chooser.getSelectedFile();
-      // TODO check for minecraft.jar;
-      String oldDir = PlatformUtil.getMinecraftFolder();
-      PlatformUtil.setMinecraftFolder( dir.getAbsolutePath() );
-      File mcjar = new File( PlatformUtil.getMinecraftJar() );
+      String oldDir = InstallerConfig.getMinecraftFolder();
+      InstallerConfig.setMinecraftFolder( dir.getAbsolutePath() );
+      File mcjar = new File( InstallerConfig.getMinecraftJar() );
       if ( !mcjar.exists() ) {
         JOptionPane.showMessageDialog( getMainPane(), "The installer couldn't find a minecraft installation in the specified folder.\n" +
                                                       "Restoring minecraft folder to " + oldDir,
             "Error setting target Minecraft installation", JOptionPane.ERROR_MESSAGE );
-        PlatformUtil.setMinecraftFolder( oldDir );
+        InstallerConfig.setMinecraftFolder( oldDir );
       }
     }
   
   }
 
-  @Override
-  public void valueChanged( TreeSelectionEvent e ) {
-    if (!e.isAddedPath()) {
-      return;
-    }
-    TreePath path = e.getPath();
-    CheckBoxTree tree = getModTree();
-    if (e.getSource() == tree.getSelectionModel()) {
-      DefaultMutableTreeNode last = (DefaultMutableTreeNode)path.getLastPathComponent();
-      loadModDescription(last.getUserObject().toString());
-    } else if (e.getSource() == tree.getCheckBoxTreeSelectionModel()) {
-      getPresetDropdown().setSelectedItem( PRESET_CUSTOM );
-    }
-  }
-  
   private void advanceStep() {
     step++;
     switch(step) {
@@ -233,7 +200,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
             dispose();
           }
         }
-        File extraFolder = new File(InstallScript.EXTRA_MODS_FOLDER);
+        File extraFolder = new File(InstallerConfig.getExtraModsFolder());
         //Check that the extras folder exists and that it has some mods in it. Otherwise, simply start installing
         if (extraFolder.exists()) {
           File[] children = extraFolder.listFiles();
@@ -248,6 +215,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
           //extras folder was empty, or no mod directories (only files)
           advanceStep();
         } else {
+          //extras folder didn't exist.
           advanceStep();
         }
         return;
@@ -326,7 +294,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
       modTreeRoot = new DefaultMutableTreeNode();
       treeNodeMap = new HashMap<String, DefaultMutableTreeNode>();
       try {
-        File opt = new File(InstallScript.EXTRA_MODS_FOLDER);
+        File opt = new File(InstallerConfig.getExtraModsFolder());
         for (File mod : opt.listFiles()) {
           if (!mod.isDirectory()) {
             continue;
@@ -382,7 +350,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
       presetDropdown.addItem(PRESET_ALL);
       presetDropdown.addItem(PRESET_CUSTOM);
       presetDropdown.addActionListener( this );
-      File presetDir = new File(FilenameUtils.concat( InstallerProperties.getInstallerDir(), "config/presets" ));
+      File presetDir = new File(FilenameUtils.concat( InstallerConfig.getInstallerDir(), "config/presets" ));
       if (!presetDir.exists() || !presetDir.isDirectory()) {
         LOGGER.warn( "presets does not exist or is not a directory" );
       } else {
@@ -426,18 +394,17 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
     p.removeAll();
     p.setLayout( new BoxLayout( p, BoxLayout.Y_AXIS ) );
     
-    final String extras = InstallScript.EXTRA_MODS_FOLDER;
+    final String extras = InstallerConfig.getExtraModsFolder();
     final String modFolderName = FilenameUtils.concat( extras, modName );
     File modFolder = new File(modFolderName);
     if (!modFolder.exists()) {
       LOGGER.error( "Mod folder for " + modName + " does not exist." );
     }
     File descrFile = new File(FilenameUtils.concat( modFolderName, "description.txt" ));
-    File imgFile = new File(FilenameUtils.concat( modFolderName, "image.png" )); //TODO search for other image types
+    File imgFile = new File(FilenameUtils.concat( modFolderName, "image.png" ));
     if (!descrFile.exists() && !imgFile.exists()) {
       p.add( new JLabel("<html>No description for:<br>"+modName+"</html>") );
     } else {
-      //TODO use the same label/editor and just set image/text
       if (imgFile.exists()) {
         try {
           JLabel label = new JLabel();
@@ -462,6 +429,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
           area.setText( buffer.toString() );
           area.setEditable( false );
           area.addHyperlinkListener( this );
+          area.setCaretPosition( 0 );
           p.add(new JScrollPane(area));
         } catch ( IOException e ) {
           LOGGER.error( "Error reading description file: " + descrFile.getPath(), e );
@@ -501,51 +469,33 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
     presetDropdown.setSelectedItem( presetName );
   }
   
-  public static boolean sanityCheck() {
-    //Check for some required stuff
-    File mcFolder = new File(PlatformUtil.getMinecraftFolder());
-    String errmsg = "";
-    if (!mcFolder.exists()) {
-      errmsg += PlatformUtil.getMinecraftFolder() + " doesn't exist.\n";
+  @Override
+  public void actionPerformed( ActionEvent e ) {
+    if (e.getSource() == getNextButton()) {
+      advanceStep();
+    } else if (e.getSource() == getCancelButton()) {
+      setVisible( false );
+      dispose();
+    } else if (e.getSource() == getPresetDropdown()) {
+      loadPreset( getPresetDropdown().getSelectedItem().toString() );
+    } else if (e.getSource() == getTargetButton()) {
+      chooseTargetMinecraftFolder();
     }
-    File modsFolder = new File(InstallScript.MODS_FOLDER);
-    if (!modsFolder.exists()) {
-      errmsg += InstallScript.MODS_FOLDER + " doesn't exist.\n";
-    }
-    File logofile = new File(InstallerProperties.getInitTextFile());
-    if (!logofile.exists()) {
-      errmsg += InstallerProperties.getInitTextFile() +" doesn't exist.\n";
-    }
-    File textfile = new File(InstallerProperties.getLogoFile());
-    if (!textfile.exists()) {
-      errmsg += InstallerProperties.getLogoFile() + " doesn't exist.\n" ;
-    }
-    
-    errmsg = errmsg.trim();
-    if (!errmsg.isEmpty()) {
-      LOGGER.error( errmsg );
-      JOptionPane.showMessageDialog( null, errmsg, "Installer Error", JOptionPane.ERROR_MESSAGE );
-    }
-    return errmsg.isEmpty();
   }
-  
-  public static void main( String[] args ) throws IOException {
-    
-    LOGGER.debug( "Starting Modpack Installer" );
-    LOGGER.debug( "Current OS: " + PlatformUtil.currentOS );
-    
-    if (!sanityCheck()) {
+
+  @Override
+  public void valueChanged( TreeSelectionEvent e ) {
+    if (!e.isAddedPath()) {
       return;
     }
-    
-    try {
-      UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
-    } catch (Exception e) {
-      LOGGER.warn( "Couldn't set the look and feel", e );
+    TreePath path = e.getPath();
+    CheckBoxTree tree = getModTree();
+    if (e.getSource() == tree.getSelectionModel()) {
+      DefaultMutableTreeNode last = (DefaultMutableTreeNode)path.getLastPathComponent();
+      loadModDescription(last.getUserObject().toString());
+    } else if (e.getSource() == tree.getCheckBoxTreeSelectionModel()) {
+      getPresetDropdown().setSelectedItem( PRESET_CUSTOM );
     }
-    
-    Installer installer = new Installer();
-    installer.setVisible( true );
   }
 
   @Override
@@ -554,7 +504,7 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
       return;
     }
     SwingWorker<Object, Object> worker = new SwingWorker<Object, Object>(){
-
+  
       @Override
       protected Object doInBackground() throws Exception {
         try {
@@ -568,5 +518,57 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
       
     };
     worker.execute();
+  }
+
+  public static boolean sanityCheck() {
+    //Check for some required stuff
+    File mcFolder = new File(InstallerConfig.getMinecraftFolder());
+    String errmsg = "";
+    if (InstallerConfig.getInstallerDir().toLowerCase().endsWith( ".zip" )) {
+      //TODO is this the right check?
+      errmsg += "You must extract the contents of the zip file to a folder before running the installer.";
+      return false;
+    }
+    if (!mcFolder.exists()) {
+      errmsg += InstallerConfig.getMinecraftFolder() + " doesn't exist.\n";
+    }
+    File modsFolder = new File(InstallerConfig.getInstallerModsFolder());
+    if (!modsFolder.exists()) {
+      errmsg += InstallerConfig.getInstallerModsFolder() + " doesn't exist.\n";
+    }
+    File logofile = new File(InstallerConfig.getInitTextFile());
+    if (!logofile.exists()) {
+      errmsg += InstallerConfig.getInitTextFile() +" doesn't exist.\n";
+    }
+    File textfile = new File(InstallerConfig.getLogoFile());
+    if (!textfile.exists()) {
+      errmsg += InstallerConfig.getLogoFile() + " doesn't exist.\n" ;
+    }
+    
+    errmsg = errmsg.trim();
+    if (!errmsg.isEmpty()) {
+      LOGGER.error( errmsg );
+      JOptionPane.showMessageDialog( null, errmsg, "Installer Error", JOptionPane.ERROR_MESSAGE );
+    }
+    return errmsg.isEmpty();
+  }
+  
+  public static void main( String[] args ) throws IOException {
+    
+    LOGGER.debug( "Starting Modpack Installer" );
+    LOGGER.debug( "Current OS: " + InstallerConfig.currentOS );
+    
+    if (!sanityCheck()) {
+      return;
+    }
+    
+    try {
+      UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
+    } catch (Exception e) {
+      LOGGER.warn( "Couldn't set the look and feel", e );
+    }
+    
+    Installer installer = new Installer();
+    installer.setVisible( true );
   }
 }
