@@ -529,9 +529,9 @@ public class Installer extends JFrame implements ActionListener, TreeSelectionLi
       errmsg += "You must extract the contents of the zip file to a folder before running the installer.";
       return false;
     }
-    if (!mcFolder.exists()) {
-      errmsg += InstallerConfig.getMinecraftFolder() + " doesn't exist.\n";
-    }
+//    if (!mcFolder.exists()) {
+//      errmsg += InstallerConfig.getMinecraftFolder() + " doesn't exist.\n";
+//    }
     File modsFolder = new File(InstallerConfig.getInstallerModsFolder());
     if (!modsFolder.exists()) {
       errmsg += InstallerConfig.getInstallerModsFolder() + " doesn't exist.\n";
