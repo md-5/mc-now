@@ -3,29 +3,29 @@
 
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="true">
 
-  <appender name="rolling" class="org.apache.log4j.RollingFileAppender">
-    <param name="file" value="installer.log" />
-    <param name="append" value="true" />
+    <appender name="rolling" class="org.apache.log4j.RollingFileAppender">
+        <param name="file" value="installer.log" />
+        <param name="append" value="true" />
 
-    <param name="MaxFileSize" value="2MB" />
-    <param name="MaxBackupIndex" value="1" />
+        <param name="MaxFileSize" value="2MB" />
+        <param name="MaxBackupIndex" value="1" />
 
-    <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%d{yyyy-MMM-dd HH:mm:ss} [%5p,[%t] %c{1}] %m%n" />
-    </layout>
-  </appender>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{yyyy-MMM-dd HH:mm:ss} [%5p,[%t] %c{1}] %m%n" />
+        </layout>
+    </appender>
 
-  <appender name="console" class="org.apache.log4j.ConsoleAppender">
-    <param name="Target" value="System.out" />
-    <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%d{yyyy-MMM-dd HH:mm:ss} [%5p,[%t] %c{1}] %m%n" />
-    </layout>
-  </appender>
+    <appender name="console" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out" />
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{yyyy-MMM-dd HH:mm:ss} [%5p,[%t] %c{1}] %m%n" />
+        </layout>
+    </appender>
 
-  <root>
-    <level value="debug" />
-    <appender-ref ref="rolling" />
-    <appender-ref ref="console" />
-  </root>
+    <root>
+        <level value="debug" />
+        <appender-ref ref="rolling" />
+        <appender-ref ref="console" />
+    </root>
 
 </log4j:configuration>
